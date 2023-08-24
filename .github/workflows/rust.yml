@@ -1,7 +1,7 @@
 
 on: [push, pull_request]
 
-name: Rust Toolkit
+name: Continuous integration
 
 jobs:
   check:

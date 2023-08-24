@@ -12,12 +12,6 @@ documentation = "https://docs.rs/spin3d"
 keywords = ["rotation", "euler", "matrix", "csv"]
 categories = ["mathematics", "file-format::csv"]
 
-# Ensure a warning is emitted if the project has no `documentation` key.
-warn-on-missing-docs = true
-
-# Uncomment to include all files in the directory (excluding target/ and .git/)
-# include = ["*"]
-
 [dependencies]
 nalgebra = { version = "0.32", features = ["serde-serialize"] }
 serde = { version = "1.0", features = ["derive"] }

@@ -68,3 +68,10 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Generate documentation
+      run: cargo doc

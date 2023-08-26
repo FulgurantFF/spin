@@ -34,16 +34,13 @@ jobs:
           use-tool-cache: true
 
       - name: Gather coverage data
-        id: coverage
+        id: coverage  
         uses: actions-rs/grcov@v0.1
-        with:
-          coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
       - name: Coveralls upload
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel: true
           path-to-lcov: ${{ steps.coverage.outputs.report }}
 
   grcov_finalize:

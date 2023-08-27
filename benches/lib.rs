@@ -1,12 +1,11 @@
 extern crate criterion;
 
-use nalgebra as na;
 use na::Rotation3;
+use nalgebra as na;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use rand::Rng;
-
 
 use spin3d::RotationRepresentations;
 

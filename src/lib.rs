@@ -2,7 +2,6 @@ use nalgebra as na;
 
 use na::{Rotation3, SMatrix, Unit, UnitQuaternion, Vector3};
 
-
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]

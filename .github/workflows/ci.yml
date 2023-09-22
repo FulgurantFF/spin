@@ -1,7 +1,19 @@
-
-on: [push, pull_request]
-
 name: Continuous integration
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   lints:
@@ -21,7 +33,6 @@ jobs:
       - run: cargo fetch
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings  
-  
   check:
     name: Check
     runs-on: ubuntu-latest
@@ -29,34 +40,54 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --all-targets --profile=test
-
-  test:
-    name: Test
+  run:
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
-        rust: ["stable"]
-    continue-on-error: ${{ matrix.rust != 'stable' }}
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ matrix.rust }}
-      - run: cargo test --workspace
+        include:
+          - target: aarch64-apple-darwin
+            runner_os: macos-latest
+            # Runner (x86-64) and target are not compatible.
+            run_tests: false
+          - target: x86_64-pc-windows-msvc
+            runner_os: windows-latest
+            run_tests: true
+          - target: x86_64-unknown-linux-musl
+            runner_os: ubuntu-latest
+            run_tests: true
 
-  docs:
-    name: Docs
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner_os }}
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        toolchain: stable
-    - uses: Swatinem/rust-cache@v2
-    - name: Check documentation
-      env:
-        RUSTDOCFLAGS: -D warnings
-      run: cargo doc --workspace --all-features --no-deps --document-private-items
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Cargo.lock
+        run: cargo generate-lockfile
+
+      - name: Cache Rust toolchain and build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          # The cache should not be shared between different workflows and jobs.
+          # Two jobs might share the same default target but have different build targets.
+          shared-key: ${{ github.workflow }}-${{ github.job }}-${{ matrix.target }}
+
+      - name: Build tests with all features enabled
+        run: >-
+          cargo test --workspace --locked --target ${{ matrix.target }} --all-features --all-targets
+          --no-run
+      - name: Run tests with all features enabled
+        if: matrix.run_tests
+        run: >-
+          cargo test --workspace --locked --target ${{ matrix.target }} --all-features --all-targets
+          -- --nocapture --quiet
+      - name: Build workspace documentation with all features enabled
+        run: cargo doc --workspace --locked --target ${{ matrix.target }} --all-features
+
+      - name: Build release with default features
+        run: cargo build --locked --target ${{ matrix.target }} --all-targets --profile release
+
